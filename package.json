@@ -1,5 +1,5 @@
 {
-    "name": "@tinkoff/angular-open-source-starter",
+    "name": "event-source",
     "version": "1.0.0",
     "scripts": {
         "ng": "ng",
@@ -23,21 +23,25 @@
         "release:patch": "npm run release -- --release-as patch",
         "release:minor": "npm run release -- --release-as minor",
         "release:major": "npm run release -- --release-as major",
-        "publish": "npm run build:all && npm run publish:all"
+        "publish": "npm run build:all && npm run publish:all",
+        "build:all": "npm run build:event-source",
+        "publish:all": "npm run publish:event-source",
+        "build:event-source": "ng run event-source:build",
+        "test:event-source": "ng run event-source:test",
+        "test:event-source:watch": "ng run event-source:test --watch=true",
+        "publish:event-source": "npm publish ./dist/event-source"
     },
-    "description": "This is a template project to develop, create and open-source Angular libraries with demos",
-    "keywords": ["angular", "ng", "workspace", "library", "starter", "tinkoff"],
+    "description": "This is a library for declarative use of Server-Sent Events API with Angular",
+    "keywords": ["angular", "ng", "sse", "server sent events", "event-source"],
     "license": "Apache-2.0",
     "author": {
-        "name": "Roman Sedov",
-        "email": "79601794011@ya.ru",
-        "url": "http://marsibarsi.me/"
+        "name": "Vadim Kostenko",
+        "email": "er.coooool@gmail.com"
     },
-    "contributors": ["Alex Inkin <alexander@inkin.ru>"],
-    "repository": "https://github.com/TinkoffCreditSystems/angular-library-starter",
-    "bugs": "https://github.com/TinkoffCreditSystems/angular-library-starter/issues",
-    "homepage": "https://github.com/TinkoffCreditSystems/angular-library-starter#README",
-    "schematics": "./schematics/collection.json",
+    "contributors": [],
+    "repository": "",
+    "bugs": "",
+    "homepage": "",
     "dependencies": {
         "@angular/animations": "^9.1.13",
         "@angular/common": "^9.1.13",
