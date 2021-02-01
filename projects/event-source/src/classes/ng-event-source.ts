@@ -1,28 +1,28 @@
-import {Observable} from 'rxjs';
+import {Observable, Subscriber} from 'rxjs';
 import {NgMessageEvent} from '../interfaces/message-event';
 
 export class NgEventSource<T> extends Observable<NgMessageEvent<T>> {
-    constructor(
-        url: string,
-        eventName: string = 'message',
-        eventSourceInit?: EventSourceInit,
-    ) {
+    private eventSource = new EventSource(this.url, this.eventSourceInit);
+    private subscribers = new Set<Subscriber<Event>>();
+
+    constructor(private url: string, private eventSourceInit?: EventSourceInit) {
         super(subscriber => {
-            const eventSource = new EventSource(url, eventSourceInit);
+            if (this.eventSource.readyState === EventSource.CLOSED) {
+                // todo: move this creation logic (to the factory?)
+                this.eventSource = new EventSource(this.url, this.eventSourceInit);
+                this.eventSource.onopen = event =>
+                    this.subscribers.forEach(subscriber => subscriber.next(event));
+                this.eventSource.onmessage = event =>
+                    this.subscribers.forEach(subscriber => subscriber.next(event));
+                this.eventSource.onerror = event =>
+                    this.subscribers.forEach(subscriber => subscriber.error(event));
+            }
 
-            eventSource.addEventListener(eventName, event =>
-                subscriber.next(event as NgMessageEvent<T>),
-            );
+            this.subscribers.add(subscriber);
 
-            eventSource.addEventListener('error', event => {
-                if (eventSource.readyState === EventSource.CONNECTING) {
-                    return;
-                }
-
-                subscriber.error(event);
-            });
-
-            return () => eventSource.close();
+            return () => {
+                this.subscribers.delete(subscriber);
+            };
         });
     }
 }
