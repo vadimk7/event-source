@@ -1,28 +1,40 @@
-import {Observable, Subscriber} from 'rxjs';
+import {Observable} from 'rxjs';
 import {NgMessageEvent} from '../interfaces/message-event';
+import {SubscribersStore} from './subscribers-store';
 
 export class NgEventSource<T> extends Observable<NgMessageEvent<T>> {
-    private eventSource = new EventSource(this.url, this.eventSourceInit);
-    private subscribers = new Set<Subscriber<Event>>();
+    private store = new SubscribersStore<Event>();
+    private eventSource: EventSource | null = null;
 
     constructor(private url: string, private eventSourceInit?: EventSourceInit) {
         super(subscriber => {
-            if (this.eventSource.readyState === EventSource.CLOSED) {
-                // todo: move this creation logic (to the factory?)
-                this.eventSource = new EventSource(this.url, this.eventSourceInit);
-                this.eventSource.onopen = event =>
-                    this.subscribers.forEach(subscriber => subscriber.next(event));
-                this.eventSource.onmessage = event =>
-                    this.subscribers.forEach(subscriber => subscriber.next(event));
-                this.eventSource.onerror = event =>
-                    this.subscribers.forEach(subscriber => subscriber.error(event));
-            }
+            this.store.add(subscriber);
 
-            this.subscribers.add(subscriber);
-
-            return () => {
-                this.subscribers.delete(subscriber);
-            };
+            return () => this.store.delete(subscriber);
         });
+
+        this.store.change$.subscribe(subscribers =>
+            subscribers.size > 0 ? this.connect() : this.disconnect(),
+        );
+    }
+
+    private connect() {
+        if (this.eventSource) {
+            return;
+        }
+
+        this.eventSource = new EventSource(this.url, this.eventSourceInit);
+        this.eventSource.onopen = event => this.store.forEach(s => s.next(event));
+        this.eventSource.onmessage = event => this.store.forEach(s => s.next(event));
+        this.eventSource.onerror = event => this.store.forEach(s => s.error(event));
+    }
+
+    private disconnect() {
+        if (this.eventSource === null) {
+            return;
+        }
+
+        this.eventSource.close();
+        this.eventSource = null;
     }
 }
